@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from sklearn.linear_model import LinearRegression
 import numpy as np
+from supabase import create_client, Client
 
 import base64
 
@@ -67,22 +68,27 @@ st.markdown(page_bg, unsafe_allow_html=True)
 
 # ---------------- SETUP ---------------- #
 
+# ---------------- SETUP ---------------- #
+
 st.set_page_config(page_title="Student Expense Tracker", layout="wide")
 
-DATA_FILE = "data/expenses.csv"
-
-if not os.path.exists("data"):
-    os.makedirs("data")
-
-if not os.path.exists(DATA_FILE):
-    df = pd.DataFrame(columns=["date","type","amount","category","description","payment_method"])
-    df.to_csv(DATA_FILE, index=False)
+# Connect to Supabase
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def load_data():
-    return pd.read_csv(DATA_FILE)
+    response = supabase.table("expenses").select("*").execute()
+    if response.data:
+        df = pd.DataFrame(response.data)
+        cols = ["date", "type", "amount", "category", "description", "payment_method"]
+        df = df[cols]
+        return df
+    else:
+        return pd.DataFrame(columns=["date","type","amount","category","description","payment_method"])
 
-def save_data(df):
-    df.to_csv(DATA_FILE, index=False)
+def save_data(row):
+    supabase.table("expenses").insert(row).execute()
 
 def calculate_balance(df):
     if df.empty:
@@ -159,15 +165,14 @@ elif menu == "Add Income":
 
     if st.button("Save Income"):
         new_data = {
-            "date": date,
+            "date": str(date),
             "type": "income",
             "amount": amount,
             "category": "Income",
             "description": description,
             "payment_method": payment
         }
-        df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
-        save_data(df)
+        save_data( new_data)
         st.success(f"₦{amount:.2f} added successfully!")
         st.rerun()
 # ---------------- ADD EXPENSE ---------------- #
@@ -207,15 +212,14 @@ elif menu == "Add Expense":
 
     if st.button("Save Expense"):
         new_data = {
-            "date": date,
+            "date": str(date),
             "type": "expense",
             "amount": amount,
             "category": category,
             "description": description,
             "payment_method": payment
         }
-        df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
-        save_data(df)
+        save_data(new_data)
         st.success("Expense saved successfully!")
         st.rerun()
 
@@ -265,7 +269,10 @@ elif menu == "Analysis":
 
     category_sum = df[df["type"] == "expense"].groupby("category")["amount"].sum()
 
-    st.pyplot(category_sum.plot.pie(autopct="%1.1f%%").figure)    
+    if not category_sum.empty:
+        st.pyplot(category_sum.plot.pie(autopct="%1.1f%%").figure)
+    else:
+        st.info("No expense data yet to display pie chart")   
 
 # ---------------- AI PREDICTION ---------------- #
 
