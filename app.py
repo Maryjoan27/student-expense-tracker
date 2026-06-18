@@ -5,8 +5,10 @@ from datetime import datetime
 from sklearn.linear_model import LinearRegression
 import numpy as np
 from supabase import create_client, Client
-
 import base64
+
+# This MUST be first
+st.set_page_config(page_title="Student Expense Tracker", layout="wide")
 
 def get_base64_image(image_path):
     with open(image_path, "rb") as img:
@@ -16,26 +18,12 @@ img = get_base64_image("assets/background.png")
 
 page_bg = f"""
 <style>
-
 .stApp {{
     background-image: url("data:image/png;base64,{img}");
     background-size: cover;
     background-position: center;
-    background-color: rgba(0, 0, 0, 0.75);
     background-repeat: no-repeat;
-    filter: brightness (0.4);
 }}
-
-.stApp::before {{
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-}}
-
 </style>
 """
 
@@ -43,13 +31,12 @@ st.markdown("""
 <h1 style='text-align: center; color: #1f4e79;'>
 💰 Smart Student Expense Tracker
 </h1>
-
 <p style='text-align: center; font-size:18px;'>
 Track your spending, save smarter, and let AI guide your finances 🤖
 </p>
 """, unsafe_allow_html=True)
 
-st.image ("assets/logo.png", width=300 )
+st.image("assets/logo.png", width=300)
 
 st.markdown("""
 <style>
@@ -68,37 +55,10 @@ st.markdown(page_bg, unsafe_allow_html=True)
 
 # ---------------- SETUP ---------------- #
 
-# ---------------- SETUP ---------------- #
-
-st.set_page_config(page_title="Student Expense Tracker", layout="wide")
-
 # Connect to Supabase
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-def load_data():
-    response = supabase.table("expenses").select("*").execute()
-    if response.data:
-        df = pd.DataFrame(response.data)
-        cols = ["date", "type", "amount", "category", "description", "payment_method"]
-        df = df[cols]
-        return df
-    else:
-        return pd.DataFrame(columns=["date","type","amount","category","description","payment_method"])
-
-def save_data(row):
-    supabase.table("expenses").insert(row).execute()
-
-def calculate_balance(df):
-    if df.empty:
-        return 0, 0, 0
-    income = df[df["type"] == "income"]["amount"].sum()
-    expenses = df[df["type"] == "expense"]["amount"].sum()
-    balance = income - expenses
-    return balance, income, expenses
-
-df = load_data()
 # ---------------- SIDEBAR ---------------- #
 
 menu = st.sidebar.radio("Navigation", [
