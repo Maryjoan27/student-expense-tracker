@@ -59,6 +59,32 @@ st.markdown(page_bg, unsafe_allow_html=True)
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def load_data():
+    response = supabase.table("expenses").select("*").execute()
+    if response.data:
+        df = pd.DataFrame(response.data)
+        cols = ["date", "type", "amount", "category", "description", "payment_method"]
+        df = df[cols]
+        return df
+    else:
+        return pd.DataFrame(columns=["date","type","amount","category","description","payment_method"])
+
+def save_data(row):
+    supabase.table("expenses").insert(row).execute()
+
+def calculate_balance(df):
+    if df.empty:
+        return 0, 0, 0
+    income = df[df["type"] == "income"]["amount"].sum()
+    expenses = df[df["type"] == "expense"]["amount"].sum()
+    balance = income - expenses
+    return balance, income, expenses
+
+df = load_data()
+
+
 # ---------------- SIDEBAR ---------------- #
 
 menu = st.sidebar.radio("Navigation", [
