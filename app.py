@@ -5,6 +5,7 @@ from datetime import datetime
 import numpy as np
 from supabase import create_client, Client
 import base64
+from sklearn.linear_model import LinearRegression
 
 # This MUST be first
 st.set_page_config(page_title="Student Expense Tracker", layout="wide")
