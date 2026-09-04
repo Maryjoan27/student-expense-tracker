@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-from sklearn.linear_model import LinearRegression
 import numpy as np
 from supabase import create_client, Client
 import base64
@@ -58,7 +57,6 @@ st.markdown(page_bg, unsafe_allow_html=True)
 # Connect to Supabase
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def load_data():
